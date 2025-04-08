@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Viewer Program</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .custom-file-upload {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        .custom-file-upload:hover {
+            background-color: #45a049;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #images-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .image-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .image-item:hover {
+            transform: scale(1.05);
+        }
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-item .image-name {
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #f8f8f8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .status-message {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px auto;
+        }
+        .loading-spinner-3d {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            position: relative;
+            perspective: 800px;
+        }
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            animation: rotate 2s infinite linear;
+        }
+        .cube-face {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(76, 175, 80, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+        }
+        .front  { transform: rotateY(0deg) translateZ(30px); }
+        .back   { transform: rotateY(180deg) translateZ(30px); }
+        .right  { transform: rotateY(90deg) translateZ(30px); }
+        .left   { transform: rotateY(-90deg) translateZ(30px); }
+        .top    { transform: rotateX(90deg) translateZ(30px); }
+        .bottom { transform: rotateX(-90deg) translateZ(30px); }
+        
+        @keyframes rotate {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            33% { transform: rotateX(360deg) rotateY(0deg) rotateZ(0deg); }
+            66% { transform: rotateX(360deg) rotateY(360deg) rotateZ(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+        }
+        .loading p {
+            margin-top: 15px;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* Lightbox styles */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .lightbox-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox-img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1010;
+        }
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1010;
+            background-color: rgba(0, 0, 0, 0.3);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        .nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        .prev-btn {
+            left: 30px;
+        }
+        .next-btn {
+            right: 30px;
+        }
+        .image-counter {
+            position: absolute;
+            bottom: 20px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        /* Popup styles */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: popupFadeIn 0.3s;
+        }
+        @keyframes popupFadeIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .popup-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .popup-message {
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .popup-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .popup-btn:hover {
+            background-color: #45a049;
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .popup-close:hover {
+            color: #333;
+        }
+        
+        /* Footer styles */
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-text {
+            margin-bottom: 10px;
+        }
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+        .footer-link {
+            color: #aaffaa;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+            #images-container {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .footer-links {
+                margin-top: 15px;
+                justify-content: center;
+            }
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            .prev-btn {
+                left: 10px;
+            }
+            .next-btn {
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Viewer Program</h1>
+        
+        <div class="input-section">
+            <label class="custom-file-upload">
+                <input type="file" id="folder-input" webkitdirectory directory multiple>
+                เลือกโฟลเดอร์ที่มีรูปภาพ
+            </label>
+        </div>
+        
+        <div id="status-message" class="status-message info">กรุณาเลือกโฟลเดอร์ที่มีรูปภาพ</div>
+        
+        <div id="loading" class="loading">
+            <div class="loading-spinner-3d">
+                <div class="cube">
+                    <div class="cube-face front">⟳</div>
+                    <div class="cube-face back">⟳</div>
+                    <div class="cube-face right">⟳</div>
+                    <div class="cube-face left">⟳</div>
+                    <div class="cube-face top">⟳</div>
+                    <div class="cube-face bottom">⟳</div>
+                </div>
+            </div>
+            <p>กำลังโหลดรูปภาพ...</p>
+        </div>
+        
+        <div id="images-container"></div>
+    </div>
+    
+    <!-- Lightbox for image viewing -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <span class="close-btn">&times;</span>
+            <span class="nav-btn prev-btn">&#10094;</span>
+            <img id="lightbox-img" class="lightbox-img" src="" alt="">
+            <span class="nav-btn next-btn">&#10095;</span>
+            <div id="image-counter" class="image-counter"></div>
+        </div>
+    </div>
+    
+    <!-- Custom Popup -->
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="popup-close">&times;</span>
+            <h3 class="popup-title" id="popup-title">แจ้งเตือน</h3>
+            <p class="popup-message" id="popup-message">ข้อความแจ้งเตือน</p>
+            <button class="popup-btn" id="popup-btn">ตกลง</button>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <div class="footer-text">
+                <p>&copy; 2025 Image Viewer Program | พัฒนาโดย: ทีมงานไทย</p>
+            </div>
+            <div class="footer-links">
+                <a href="#" class="footer-link">คู่มือการใช้งาน</a>
+                <a href="#" class="footer-link">ติดต่อเรา</a>
+                <a href="#" class="footer-link">รายงานปัญหา</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const folderInput = document.getElementById('folder-input');
+            const imagesContainer = document.getElementById('images-container');
+            const statusMessage = document.getElementById('status-message');
+            const loadingElement = document.getElementById('loading');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const imageCounter = document.getElementById('image-counter');
+            const closeBtn = document.querySelector('.close-btn');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            const popup = document.getElementById('popup');
+            const popupTitle = document.getElementById('popup-title');
+            const popupMessage = document.getElementById('popup-message');
+            const popupBtn = document.getElementById('popup-btn');
+            const popupClose = document.querySelector('.popup-close');
+            
+            // รายการรูปภาพ
+            let images = [];
+            let currentImageIndex = 0;
+            
+            // ฟังก์ชันแสดง popup
+            function showPopup(title, message) {
+                popupTitle.textContent = title;
+                popupMessage.textContent = message;
+                popup.style.display = 'flex';
+            }
+            
+            // ปิด popup
+            popupBtn.addEventListener('click', function() {
+                popup.style.display = 'none';
+            });
+            
+            popupClose.addEventListener('click', function() {
+                popup.style.display = 'none';
+            });
+            
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    popup.style.display = 'none';
+                }
+            });
+            
+            // จัดการกับการเลือกโฟลเดอร์
+            folderInput.addEventListener('change', function(event) {
+                const files = event.target.files;
+                
+                // ล้างข้อมูลรูปภาพเดิม
+                imagesContainer.innerHTML = '';
+                images = [];
+                
+                if (files.length === 0) {
+                    updateStatus('ไม่พบไฟล์ในโฟลเดอร์ที่เลือก', 'error');
+                    showPopup('ไม่พบไฟล์', 'ไม่พบไฟล์ในโฟลเดอร์ที่เลือก กรุณาเลือกโฟลเดอร์ที่มีรูปภาพ');
+                    return;
+                }
+                
+                // กรองเฉพาะไฟล์รูปภาพ
+                const imageFiles = Array.from(files).filter(file => 
+                    file.type.startsWith('image/') || 
+                    /\.(jpe?g|png|gif|bmp|webp|svg)$/i.test(file.name)
+                );
+                
+                if (imageFiles.length === 0) {
+                    updateStatus('ไม่พบไฟล์รูปภาพในโฟลเดอร์ที่เลือก', 'error');
+                    showPopup('ไม่พบรูปภาพ', 'ไม่พบไฟล์รูปภาพในโฟลเดอร์ที่เลือก กรุณาเลือกโฟลเดอร์ที่มีรูปภาพ');
+                    return;
+                }
+                
+                // แสดงสถานะกำลังโหลด
+                loadingElement.style.display = 'block';
+                updateStatus(`กำลังโหลดรูปภาพ ${imageFiles.length} รูป...`, 'info');
+                
+                let loadedCount = 0;
+                
+                // โหลดและแสดงรูปภาพ
+                imageFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        // เก็บข้อมูลรูปภาพ
+                        const imageData = {
+                            index: index,
+                            name: file.name,
+                            src: e.target.result
+                        };
+                        
+                        images.push(imageData);
+                        
+                        // สร้าง DOM element สำหรับรูปภาพ
+                        const imageItem = document.createElement('div');
+                        imageItem.className = 'image-item';
+                        imageItem.dataset.index = index;
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = file.name;
+                        
+                        const nameElement = document.createElement('div');
+                        nameElement.className = 'image-name';
+                        nameElement.textContent = file.name;
+                        
+                        imageItem.appendChild(img);
+                        imageItem.appendChild(nameElement);
+                        
+                        // เพิ่ม event listener สำหรับการคลิก
+                        imageItem.addEventListener('click', function() {
+                            openLightbox(index);
+                        });
+                        
+                        imagesContainer.appendChild(imageItem);
+                        
+                        // อัพเดทสถานะการโหลด
+                        loadedCount++;
+                        if (loadedCount === imageFiles.length) {
+                            loadingElement.style.display = 'none';
+                            updateStatus(`แสดงรูปภาพทั้งหมด ${imageFiles.length} รูป`, 'success');
+                            showPopup('สำเร็จ', `โหลดรูปภาพเสร็จสิ้น พบรูปภาพทั้งหมด ${imageFiles.length} รูป`);
+                            
+                            // เรียงลำดับรูปภาพตามชื่อไฟล์
+                            sortImages();
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        loadedCount++;
+                        console.error(`ไม่สามารถอ่านไฟล์ ${file.name} ได้`);
+                        
+                        if (loadedCount === imageFiles.length) {
+                            loadingElement.style.display = 'none';
+                            const successCount = images.length;
+                            updateStatus(`แสดงรูปภาพทั้งหมด ${successCount} รูป (มีบางรูปโหลดไม่สำเร็จ)`, 'success');
+                        }
+                    };
+                    
+                    // อ่านไฟล์เป็น Data URL
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            // ฟังก์ชันเรียงลำดับรูปภาพตามชื่อไฟล์
+            function sortImages() {
+                // เรียงลำดับข้อมูลรูปภาพ
+                images.sort((a, b) => a.name.localeCompare(b.name));
+                
+                // อัพเดทดัชนีหลังจากเรียงลำดับ
+                images.forEach((image, index) => {
+                    image.index = index;
+                });
+                
+                // จัดเรียง DOM elements ใหม่
+                const imageItems = imagesContainer.querySelectorAll('.image-item');
+                const fragment = document.createDocumentFragment();
+                
+                images.forEach(image => {
+                    const item = Array.from(imageItems).find(el => el.querySelector('img').alt === image.name);
+                    if (item) {
+                        item.dataset.index = image.index;
+                        fragment.appendChild(item);
+                    }
+                });
+                
+                imagesContainer.innerHTML = '';
+                imagesContainer.appendChild(fragment);
+            }
+            
+            // ฟังก์ชันอัพเดทข้อความสถานะ
+            function updateStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message ${type}`;
+            }
+            
+            // ฟังก์ชันเปิด lightbox
+            function openLightbox(index) {
+                if (images.length === 0) return;
+                
+                // ป้องกันดัชนีเกินขอบเขต
+                currentImageIndex = Math.max(0, Math.min(index, images.length - 1));
+                
+                const image = images[currentImageIndex];
+                lightboxImg.src = image.src;
+                lightboxImg.alt = image.name;
+                
+                updateImageCounter();
+                lightbox.style.display = 'block';
+                
+                // เพิ่ม event listener สำหรับปุ่มลูกศร
+                document.addEventListener('keydown', handleKeyDown);
+            }
+            
+            // ฟังก์ชันปิด lightbox
+            function closeLightbox() {
+                lightbox.style.display = 'none';
+                document.removeEventListener('keydown', handleKeyDown);
+            }
+            
+            // ฟังก์ชันเปลี่ยนรูปภาพในโหมด lightbox
+            function changeImage(direction) {
+                currentImageIndex += direction;
+                
+                // วนกลับเมื่อเลื่อนเกินขอบเขต
+                if (currentImageIndex < 0) currentImageIndex = images.length - 1;
+                if (currentImageIndex >= images.length) currentImageIndex = 0;
+                
+                const image = images[currentImageIndex];
+                lightboxImg.src = image.src;
+                lightboxImg.alt = image.name;
+                
+                updateImageCounter();
+            }
+            
+            // อัพเดทตัวนับรูปภาพ
+            function updateImageCounter() {
+                imageCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+            }
+            
+            // จัดการการกดปุ่มลูกศร
+            function handleKeyDown(e) {
+                if (e.key === 'ArrowLeft') {
+                    changeImage(-1);
+                } else if (e.key === 'ArrowRight') {
+                    changeImage(1);
+                } else if (e.key === 'Escape') {
+                    closeLightbox();
+                }
+            }
+            
+            // Event listeners สำหรับ lightbox
+            closeBtn.addEventListener('click', closeLightbox);
+            prevBtn.addEventListener('click', () => changeImage(-1));
+            nextBtn.addEventListener('click', () => changeImage(1));
+            
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
