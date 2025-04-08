@@ -10,10 +10,22 @@
     <div class="container">
         <h1>Image Viewer Program</h1>
         
+<!--         <div class="input-section">
+            <label class="custom-file-upload">
+                <input type="file" id="folder-input" webkitdirectory directory multiple>
+                เลือกโฟลเดอร์ที่มีรูปภาพ
+            </label>
+        </div> -->
         <div class="input-section">
             <label class="custom-file-upload">
                 <input type="file" id="folder-input" webkitdirectory directory multiple>
                 เลือกโฟลเดอร์ที่มีรูปภาพ
+            </label>
+            
+            <!-- เพิ่มตัวเลือกสำหรับอุปกรณ์มือถือ -->
+            <label class="custom-file-upload mobile-option">
+                <input type="file" id="files-input" multiple accept="image/*">
+                เลือกรูปภาพหลายไฟล์ (สำหรับมือถือ)
             </label>
         </div>
         
