@@ -383,3 +383,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// เพิ่ม event listener สำหรับการเลือกไฟล์แบบ multiple บนมือถือ
+const filesInput = document.getElementById('files-input');
+if (filesInput) {
+    filesInput.addEventListener('change', function(event) {
+        const files = event.target.files;
+        handleImageFiles(files);
+    });
+}
+
+// แยกฟังก์ชันการจัดการไฟล์รูปภาพออกมา เพื่อใช้ซ้ำได้
+function handleImageFiles(files) {
+    // ล้างข้อมูลรูปภาพเดิม
+    imagesContainer.innerHTML = '';
+    images = [];
+    
+    if (files.length === 0) {
+        updateStatus('ไม่พบไฟล์ในการเลือก', 'error');
+        showModal('ไม่พบไฟล์', 'ไม่พบไฟล์รูปภาพ กรุณาเลือกรูปภาพ');
+        return;
+    }
+    
+    // กรองเฉพาะไฟล์รูปภาพ
+    const imageFiles = Array.from(files).filter(file => 
+        file.type.startsWith('image/') || 
+        /\.(jpe?g|png|gif|bmp|webp|svg)$/i.test(file.name)
+    );
+    
+    // โค้ดการโหลดและแสดงรูปภาพต่อจากนี้...
+}
+
+// ปรับฟังก์ชันเดิมให้เรียกใช้ handleImageFiles
+folderInput.addEventListener('change', function(event) {
+    const files = event.target.files;
+    handleImageFiles(files);
+});
+// ตรวจสอบว่าเป็นอุปกรณ์มือถือหรือไม่
+function isMobileDevice() {
+    return (window.innerWidth <= 768) || 
+           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// เมื่อโหลดหน้าเว็บเสร็จ ตรวจสอบอุปกรณ์และแสดงคำแนะนำที่เหมาะสม
+if (isMobileDevice()) {
+    showModal('คำแนะนำสำหรับมือถือ', 
+        'ในอุปกรณ์มือถือ แนะนำให้ใช้ปุ่ม "เลือกรูปภาพหลายไฟล์" เพื่อเลือกรูปภาพหลายไฟล์พร้อมกัน');
+}
